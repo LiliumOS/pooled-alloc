@@ -70,7 +70,7 @@ impl BlockSize {
     #[inline(always)]
     pub const fn ceil_to(self, val: usize) -> usize {
         let r = self.get() - 1;
-        (val + r) & r
+        (val + r) & !r
     }
 
     #[inline(always)]

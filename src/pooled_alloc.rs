@@ -83,7 +83,7 @@ impl<A: Allocator> PooledAlloc<A> {
         let expected_pool = match size {
             0..SMALLEST_POOL => 0,
             4096.. => DEFAULT_POOL_SIZES.len(),
-            x => (x.ilog2() as usize - SMALLEST_POOL) >> 1,
+            x => (x.div_ceil(SMALLEST_POOL)).ilog2() as usize >> 1,
         };
 
         let expected_pool = expected_pool.max(min_pool); // Don't expect an impossible pool.

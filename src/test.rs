@@ -1,4 +1,7 @@
-use core::alloc::{GlobalAlloc, Layout};
+use core::{
+    alloc::{GlobalAlloc, Layout},
+    array,
+};
 use std::alloc::{Allocator, System};
 
 use crate::pooled_alloc::PooledAlloc;
@@ -26,13 +29,11 @@ fn test_valid_alloc() {
 
         assert!(
             layout.size() <= alloc.len(),
-            "Layout {layout:?}. Alloc: {alloc:p} (len: {})",
-            alloc.len()
+            "Layout {layout:?}. Alloc: {alloc:p}",
         );
         assert!(
             alloc.is_aligned_to(layout.align()),
-            "Layout {layout:?}. Alloc: {alloc:p} (len: {})",
-            alloc.len()
+            "Layout {layout:?}. Alloc: {alloc:p} ",
         );
 
         // SAFETY:
@@ -52,13 +53,11 @@ fn test_alloc_zeroed() {
 
         assert!(
             layout.size() <= alloc.len(),
-            "Layout {layout:?}. Alloc: {alloc:p} (len: {})",
-            alloc.len()
+            "Layout {layout:?}. Alloc: {alloc:p}",
         );
         assert!(
             alloc.is_aligned_to(layout.align()),
-            "Layout {layout:?}. Alloc: {alloc:p} (len: {})",
-            alloc.len()
+            "Layout {layout:?}. Alloc: {alloc:p}",
         );
 
         for b in unsafe { alloc.as_ref() } {
@@ -70,5 +69,31 @@ fn test_alloc_zeroed() {
         unsafe {
             ALLOC.deallocate(alloc.cast(), layout);
         }
+    }
+}
+
+#[test]
+fn test_box() {
+    let b = Box::new_in([0xFFu8; 127], &ALLOC);
+
+    for b in *b {
+        assert_eq!(b, 0xFF);
+    }
+}
+
+#[test]
+fn test_repeated_allocs() {
+    let mut v: [_; 8] = array::from_fn(|_| Box::new_in([0u64; 8], &ALLOC));
+
+    let r = unsafe { v.get_disjoint_unchecked_mut([0, 1, 2, 3, 4, 5, 6, 7]) };
+
+    let mut r = r.map(|v| &mut **v);
+
+    for m in &mut r {
+        **m = [1u64; 8];
+    }
+
+    for m in &mut r {
+        assert_eq!(**m, [1u64; 8]);
     }
 }
