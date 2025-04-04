@@ -83,17 +83,17 @@ fn test_box() {
 
 #[test]
 fn test_repeated_allocs() {
-    let mut v: [_; 8] = array::from_fn(|_| Box::new_in([0u64; 8], &ALLOC));
+    let mut v: [_; 8] = array::from_fn(|_| Box::new_in([!0usize; 8], &ALLOC));
 
-    let r = unsafe { v.get_disjoint_unchecked_mut([0, 1, 2, 3, 4, 5, 6, 7]) };
+    let r = v.each_mut();
 
     let mut r = r.map(|v| &mut **v);
 
-    for m in &mut r {
-        **m = [1u64; 8];
+    for (v, m) in r.iter_mut().enumerate() {
+        **m = [r; 8];
     }
 
-    for m in &mut r {
-        assert_eq!(**m, [1u64; 8]);
+    for (v, m) in r.iter_mut().enumerate() {
+        assert_eq!(**m, [v; 8]);
     }
 }
